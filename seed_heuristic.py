@@ -6,6 +6,10 @@ import re
 class SeedHeuristic(Scene):
     def construct(self):
         # TODO: pause on first seeds, matches, crumbs
+        k = 2
+        query = Text("AACCGGTT" )
+        ref = Text("..GGAAGTCAACCGATT..") #\n\n..GATCCGGCTT..")
+
         fsz = 28
 
         # colors [dark, light]
@@ -18,8 +22,6 @@ class SeedHeuristic(Scene):
         delta = [0.08*d for d in [UP+LEFT, UP+RIGHT, DOWN+LEFT, DOWN+RIGHT]]
 
         # introduce query
-        k = 2
-        query = Text("AACCGGTT" )
         query.shift(1.0*(UP+RIGHT))
         query_label = Text("query", slant=ITALIC, font_size=fsz, color=grey)
         query_label.next_to(query, 15 * LEFT)
@@ -27,7 +29,6 @@ class SeedHeuristic(Scene):
         self.play(Write(query))
 
         # introduce reference
-        ref = Text("..GGAAGTCAACCGATT..") #\n\n..GATCCGGCTT..")
         ref.next_to(query, DOWN, buff=1.0)
         ref_label = Text("reference", slant=ITALIC, font_size=fsz, color=grey)
         ref_label.next_to(ref, LEFT)
