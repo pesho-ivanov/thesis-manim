@@ -8,7 +8,7 @@
             "type": "shell",
             //"command": "echo ${workspaceFolder}",
             //"command": "pip3 show manim",
-            "command": "python3 -m manim -ql ${file} SeedHeuristic",
+            "command": "python -m manim -ql ${file} SeedHeuristic",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
