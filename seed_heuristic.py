@@ -3,12 +3,18 @@ import re
 
 #import pdb; pdb.set_trace()
 
-class SeedHeuristic(Scene):
+class SeedHeuristicPrecomputation(Scene):
     def construct(self):
-        # TODO: pause on first seeds, matches, crumbs
+        # TODO:
+        # - pause on first seeds, matches, crumbs
+        # - parallelize the matching and the crumbs after showing one
+        # - build a trie; spread the crumbs up the trie
+        # - 
+        # - another scene: Alignmnet
         k = 2
-        query = Text("AACCGGTT" )
-        ref = Text("..GGAAGTCAACCGATT..") #\n\n..GATCCGGCTT..")
+        query = Text("AACC")
+        #query = Text("AACCGGTT")
+        ref = Text("...GGAAGTCAACCGATT...") #\n\n..GATCCGGCTT..")
 
         fsz = 28
 
@@ -25,16 +31,9 @@ class SeedHeuristic(Scene):
         query.shift(1.0*(UP+RIGHT))
         query_label = Text("query", slant=ITALIC, font_size=fsz, color=grey)
         query_label.next_to(query, 15 * LEFT)
-        self.play(Write(query_label))
-        self.play(Write(query))
-
-        # introduce reference
-        ref.next_to(query, DOWN, buff=1.0)
-        ref_label = Text("reference", slant=ITALIC, font_size=fsz, color=grey)
-        ref_label.next_to(ref, LEFT)
-        ref_label.align_to(query_label, LEFT)
-        self.play(Write(ref_label))
-        self.play(Write(ref))
+        self.play(
+            Write(query_label),
+            Write(query))
 
         # split query into seeds
         seeds = VGroup()
@@ -58,8 +57,7 @@ class SeedHeuristic(Scene):
                 ShowPassingFlash(
                     seed.seed_box,
                     run_time=2,
-                    time_width=2.0
-                ))
+                    time_width=2.0))
             num += 1
 
         #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
