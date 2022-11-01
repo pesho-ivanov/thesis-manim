@@ -1,6 +1,8 @@
 from manim import *
 import re
 
+#import pdb; pdb.set_trace()
+
 class SeedHeuristic(Scene):
     def construct(self):
         # TODO: pause on first seeds, matches, crumbs
@@ -18,7 +20,6 @@ class SeedHeuristic(Scene):
         k = 2
         query = Text("AACCGGTT")
         query.shift(1.0*(UP+RIGHT))
-        #import pdb; pdb.set_trace()
         query_label = Text("query", slant=ITALIC, font_size=fsz)
         query_label.next_to(query, 15 * LEFT)
         self.play(Write(query_label))
@@ -45,8 +46,8 @@ class SeedHeuristic(Scene):
             seed.text = query.text[i:i+k]
             seed_label = Tex("$s_{}$".format(num))
             #seed_box = SurroundingRectangle(seed, buff=0.0, color=c[0])
-            seed.seed_box = BackgroundRectangle(seed, buff=0.0, color=c[0])
             #seed_box.set_fill(color=c[1], opacity=1)
+            seed.seed_box = BackgroundRectangle(seed, buff=0.0, color=c[0])
             seed_label.next_to(seed.seed_box, UP, buff=0.1)
             seeds.add(VGroup(seed, seed_label))
             self.play(Create(seed.seed_box), Write(seed_label))
@@ -56,10 +57,10 @@ class SeedHeuristic(Scene):
         #self.play(Create(seeds_brace_label))
 
         def CrumbFactory(num, c):
-            sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=1.0).scale(0.1)
-            tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.06)
-            romb_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=1.0).scale(0.1).rotate(PI/4)
-            dot_f = lambda: Dot(color=c)
+            sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
+            tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.05)
+            romb_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08).rotate(PI/4)
+            dot_f = lambda: Circle(color=c, fill_color=c, fill_opacity=1, radius=0.05)
             crumb_constructor = [ sq_f, tri_f, romb_f, dot_f ]
             return crumb_constructor[num]
 
@@ -76,13 +77,15 @@ class SeedHeuristic(Scene):
                 target_box = SurroundingRectangle(ref[j:m.end()], buff=0.0)
                 match_box.target.move_to(target_box)
                 self.play(MoveToTarget(match_box))
-                # add crumbs before this match
+
+                # add crumbs before this match while moving a slider backwards through the query
                 crumb = Crumb()
                 crumb.next_to(ref[j], UP, buff=SMALL_BUFF)
                 crumb.shift(delta[num])
-#                self.add(crumb)
-                self.play(Create(crumb), Flash(crumb, color=c, line_length=SMALL_BUFF))
-                for i in range(seed.i, 0, -1): # i in query
+                ul = Underline(query[seed.i])
+
+                self.play(Create(ul), Create(crumb), Flash(crumb, color=c, line_length=SMALL_BUFF))
+                for i in range(seed.i-1, -1, -1): # i in query
                     j -= 1
                     if j<0 or ref.text[j]=='.': break
                     crumb = crumb.copy()
@@ -91,4 +94,8 @@ class SeedHeuristic(Scene):
                     crumb_to = Crumb()
                     crumb_to.next_to(ref[j], UP, buff=SMALL_BUFF)
                     crumb_to.shift(delta[num])
-                    self.play(crumb.animate(path_arc=PI/2).move_to(crumb_to))
+                    self.play(
+                        crumb.animate(path_arc=PI/2).move_to(crumb_to),
+                        ul.animate().move_to(Underline(query[i]))
+                    )
+                self.play(Uncreate(ul))
