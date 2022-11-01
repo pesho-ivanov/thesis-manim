@@ -6,10 +6,10 @@ import re
 class SeedHeuristicPrecomputation(Scene):
     def construct(self):
         # TODO:
-        # - pause on first seeds, matches, crumbs
+        # - after first seeds, matches, crumbs: introduce the concept
         # - parallelize the matching and the crumbs after showing one
-        # - build a trie; spread the crumbs up the trie
-        # - 
+        # - build a trie
+        # - spread the crumbs up the trie
         # - another scene: Alignmnet
         k = 2
         query = Text("AACC")
@@ -35,6 +35,14 @@ class SeedHeuristicPrecomputation(Scene):
             Write(query_label),
             Write(query))
 
+        # introduce reference
+        ref.next_to(query, DOWN, buff=1.0)
+        ref_label = Text("reference", slant=ITALIC, font_size=fsz, color=grey)
+        ref_label.next_to(ref, LEFT)
+        ref_label.align_to(query_label, LEFT)
+        self.play(Write(ref_label),
+        Write(ref))
+
         # split query into seeds
         seeds = VGroup()
         num = 0
@@ -43,12 +51,9 @@ class SeedHeuristicPrecomputation(Scene):
             seed = query[i:i+k]
             seed.num = num%len(colors)
             seed.i = i
-#            seed.set_color(c[0])
             seed.text = query.text[i:i+k]
             seed_label = Tex("$s_{}$".format(num), color=c[0])
             seed.seed_box = SurroundingRectangle(seed, buff=0.06, color=c[0])
-            #seed_box.set_fill(color=c[1], opacity=1)
-            #seed.seed_box = BackgroundRectangle(seed, buff=0.0, color=c[0], opacity=0.0)
             seed_label.next_to(seed.seed_box, UP, buff=0.1)
             seeds.add(VGroup(seed, seed_label))
             self.play(
@@ -59,9 +64,6 @@ class SeedHeuristicPrecomputation(Scene):
                     run_time=2,
                     time_width=2.0))
             num += 1
-
-        #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
-        #self.play(Create(seeds_brace_label))
 
         def CrumbFactory(num, c):
             sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
@@ -109,3 +111,7 @@ class SeedHeuristicPrecomputation(Scene):
                 self.play(
                     Uncreate(ul),
                     FadeOut(fly))
+
+
+        #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
+        #self.play(Create(seeds_brace_label))
