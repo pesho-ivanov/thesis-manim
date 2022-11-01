@@ -90,7 +90,7 @@ class SeedHeuristic(Scene):
 
                 # add crumbs before this match while moving a slider backwards through the query
                 crumb = Crumb()
-                crumb.next_to(ref[j], UP, buff=1.3*SMALL_BUFF)
+                crumb.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
                 crumb.shift(delta[num])
                 ul = Underline(query[seed.i], color=c)
 
@@ -102,7 +102,7 @@ class SeedHeuristic(Scene):
                     trace = TracedPath(crumb.get_center, dissipating_time=0.5, stroke_opacity=[0, 1], stroke_color=c, stroke_width=4.0)
                     self.add(crumb, trace)
                     crumb_to = Crumb()
-                    crumb_to.next_to(ref[j], UP, buff=1.3*SMALL_BUFF)
+                    crumb_to.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
                     crumb_to.shift(delta[num])
                     self.play(
                         crumb.animate(path_arc=PI/2).move_to(crumb_to),
