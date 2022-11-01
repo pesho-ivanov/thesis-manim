@@ -71,12 +71,14 @@ class SeedHeuristic(Scene):
             Crumb = CrumbFactory(num, c)
             self.play(Wiggle(Group(seed, seed.seed_box)))
             for m in re.finditer(seed.text, ref.text):
-                match_box = seed.seed_box.copy()
-                match_box.generate_target()
                 j = m.start()  # in ref
-                target_box = SurroundingRectangle(ref[j:m.end()], buff=0.0)
-                match_box.target.move_to(target_box)
-                self.play(MoveToTarget(match_box))
+
+                # fly a box from the seed to a match
+                flying_box = seed.seed_box.copy()
+                flying_box.generate_target()
+                target_box = ref[j:m.end()]
+                flying_box.target.move_to(target_box)
+                self.play(MoveToTarget(flying_box))
 
                 # add crumbs before this match while moving a slider backwards through the query
                 crumb = Crumb()
@@ -98,4 +100,6 @@ class SeedHeuristic(Scene):
                         crumb.animate(path_arc=PI/2).move_to(crumb_to),
                         ul.animate().move_to(Underline(query[i]))
                     )
-                self.play(Uncreate(ul))
+                self.play(
+                    Uncreate(ul),
+                    Uncreate(flying_box))
