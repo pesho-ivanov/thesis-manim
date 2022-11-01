@@ -9,7 +9,7 @@ class SeedHeuristic(Scene):
         fsz = 28
 
         # colors [dark, light]
-        grey = "#777777"
+        grey = "#888888"
         blues = ["#6C8EBF", "#DAE8FC"]
         yellows = ["#D79B00", "#FFE6CC"]
         purples = ["#9673A6", "#E1D5E7"]
@@ -52,9 +52,13 @@ class SeedHeuristic(Scene):
             seed_label.next_to(seed.seed_box, UP, buff=0.1)
             seeds.add(VGroup(seed, seed_label))
             self.play(
-                Create(seed.seed_box),
                 Write(seed_label),
-                seed.animate.set_color(c[0]))
+                seed.animate.set_color(c[0]),
+                ShowPassingFlash(
+                    seed.seed_box,
+                    run_time=2,
+                    time_width=2.0
+                ))
             num += 1
 
         #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
@@ -73,22 +77,22 @@ class SeedHeuristic(Scene):
             c = seed.get_color()
             num = seed.num
             Crumb = CrumbFactory(num, c)
-            self.play(Wiggle(Group(seed, seed.seed_box)))
+            self.play(Wiggle(seed), scale_value=1.2, run_time=1.5)
             for m in re.finditer(seed.text, ref.text):
                 j = m.start()  # in ref
 
                 # fly a box from the seed to a match
-                flying_box = seed.seed_box.copy()
-                flying_box.generate_target()
+                fly = seed.copy()
+                fly.generate_target()
                 target_box = ref[j:m.end()]
-                flying_box.target.move_to(target_box)
-                self.play(MoveToTarget(flying_box))
+                fly.target.move_to(target_box)
+                self.play(MoveToTarget(fly))
 
                 # add crumbs before this match while moving a slider backwards through the query
                 crumb = Crumb()
                 crumb.next_to(ref[j], UP, buff=1.3*SMALL_BUFF)
                 crumb.shift(delta[num])
-                ul = Underline(query[seed.i])
+                ul = Underline(query[seed.i], color=c)
 
                 self.play(Create(ul), Create(crumb), Flash(crumb, color=c, line_length=SMALL_BUFF))
                 for i in range(seed.i-1, -1, -1): # i in query
@@ -105,4 +109,4 @@ class SeedHeuristic(Scene):
                         ul.animate().move_to(Underline(query[i])))
                 self.play(
                     Uncreate(ul),
-                    Uncreate(flying_box))
+                    FadeOut(fly))
