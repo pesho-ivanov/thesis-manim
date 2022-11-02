@@ -1,16 +1,33 @@
 from manim import *
+from manim_voiceover import VoiceoverScene
+#from manim_voiceover.services.gtts import GTTSService
+from manim_voiceover.services.azure import AzureService
 import re
 
 #import pdb; pdb.set_trace()
 
-class SeedHeuristicPrecomputation(Scene):
+# TODO:
+# - after first seeds, matches, crumbs: introduce the concept
+# - parallelize the matching and the crumbs after showing one
+# - build a trie
+# - spread the crumbs up the trie
+# - another scene: Alignmnet
+
+class SeedHeuristicPrecomputation(VoiceoverScene):
+    def setup_voiceover(self):
+        os.environ["AZURE_SUBSCRIPTION_KEY"] = "60c24696a4da49ba94a903def1577350"
+        os.environ["AZURE_SERVICE_REGION"] = "eastus"
+
+        #self.set_speech_service(GTTSService())
+        self.set_speech_service(
+            AzureService(
+                voice="en-US-AriaNeural",
+                style="newscast-casual",  # global_speed=1.15
+            )
+        )
+
     def construct(self):
-        # TODO:
-        # - after first seeds, matches, crumbs: introduce the concept
-        # - parallelize the matching and the crumbs after showing one
-        # - build a trie
-        # - spread the crumbs up the trie
-        # - another scene: Alignmnet
+        self.setup_voiceover()
         k = 2
         query = Text("AACC")
         #query = Text("AACCGGTT")
@@ -27,21 +44,30 @@ class SeedHeuristicPrecomputation(Scene):
         colors = [blues, yellows, purples, greens]
         delta = [0.08*d for d in [UP+LEFT, UP+RIGHT, DOWN+LEFT, DOWN+RIGHT]]
 
-        # introduce query
-        query.shift(1.0*(UP+RIGHT))
-        query_label = Text("query", slant=ITALIC, font_size=fsz, color=grey)
-        query_label.next_to(query, 15 * LEFT)
-        self.play(
-            Write(query_label),
-            Write(query))
-
         # introduce reference
-        ref.next_to(query, DOWN, buff=1.0)
-        ref_label = Text("reference", slant=ITALIC, font_size=fsz, color=grey)
-        ref_label.next_to(ref, LEFT)
-        ref_label.align_to(query_label, LEFT)
-        self.play(Write(ref_label),
-        Write(ref))
+        with self.voiceover(text="Assume we are a reference sequence such as a human genome.") as tracker:
+            ref.next_to(query, DOWN, buff=1.0)
+            ref_label = Text("reference", slant=ITALIC, font_size=fsz, color=grey)
+            ref_label.next_to(ref, LEFT)
+            self.play(
+                Write(ref_label),
+                Write(ref),
+                run_time=tracker.duration)
+
+        self.wait()
+
+        with self.voiceover(text="If we want to align a DNA read.") as tracker:
+            query.shift(1.0*(UP+RIGHT))
+            query_label = Text("query", slant=ITALIC, font_size=fsz, color=grey)
+            query_label.next_to(query, 15 * LEFT)
+            query_label.align_to(ref_label, LEFT)
+            self.play(
+                Write(query_label),
+                Write(query),
+                run_time=tracker.duration)
+        self.wait()
+
+        return
 
         # split query into seeds
         seeds = VGroup()
@@ -111,7 +137,6 @@ class SeedHeuristicPrecomputation(Scene):
                 self.play(
                     Uncreate(ul),
                     FadeOut(fly))
-
 
         #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
         #self.play(Create(seeds_brace_label))
