@@ -14,6 +14,9 @@ import regex
 # - spread the crumbs up the trie
 # - another scene: Alignmnet
 
+#seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
+#self.play(Create(seeds_brace_label))
+
 class SeedHeuristicPrecomputation(VoiceoverScene):
     def mywait(self):
         self.wait(0.5)
@@ -51,7 +54,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene):
 
         with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker:
             query.shift(1.0*(UP+RIGHT))
-            query_label = Text("Query read", slant=ITALIC, font_size=fsz, color=grey)
+            query_label = Text("Query", slant=ITALIC, font_size=fsz, color=grey)
             query_label.next_to(query, 15 * LEFT)
             self.play(
                 Write(query_label),
@@ -62,7 +65,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene):
         # introduce reference
         with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
             ref.next_to(query, DOWN, buff=1.0)
-            ref_label = Text("Reference\ngenome", slant=ITALIC, font_size=fsz, color=grey)
+            ref_label = Text("Reference", slant=ITALIC, font_size=fsz, color=grey)
             ref_label.next_to(ref, LEFT)
             ref_label.align_to(query_label, LEFT)
             self.play(
@@ -116,54 +119,53 @@ class SeedHeuristicPrecomputation(VoiceoverScene):
                         time_width=2.0))
                 num += 1
         self.mywait()
-        return
 
-        def CrumbFactory(num, c):
-            sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
-            tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.05)
-            romb_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08).rotate(PI/4)
-            dot_f = lambda: Circle(color=c, fill_color=c, fill_opacity=1, radius=0.05)
-            crumb_constructor = [ sq_f, tri_f, romb_f, dot_f ]
-            return crumb_constructor[num]
+        with self.voiceover(
+            text="We will now match each seed to all its exact occurences and mark the preceding reference positions with what we call bread crumbs.\
+                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us home, to a best alignment.") as tracker:
+            def CrumbFactory(num, c):
+                sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
+                tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.05)
+                romb_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08).rotate(PI/4)
+                dot_f = lambda: Circle(color=c, fill_color=c, fill_opacity=1, radius=0.05)
+                crumb_constructor = [ sq_f, tri_f, romb_f, dot_f ]
+                return crumb_constructor[num]
 
-        # match the seeds into the reference
-        for (seed, label) in seeds:
-            c = seed.get_color()
-            num = seed.num
-            Crumb = CrumbFactory(num, c)
-            self.play(Wiggle(seed), scale_value=1.2, run_time=1.5)
-            for m in re.finditer(seed.text, ref.text):
-                j = m.start()  # in ref
+            # match the seeds into the reference
+            for (seed, label) in seeds:
+                c = seed.get_color()
+                num = seed.num
+                Crumb = CrumbFactory(num, c)
+                self.play(Wiggle(seed), scale_value=1.2, run_time=1.5)
+                for m in re.finditer(seed.text, ref.text):
+                    j = m.start()  # in ref
 
-                # fly a box from the seed to a match
-                fly = seed.copy()
-                fly.generate_target()
-                target_box = ref[j:m.end()]
-                fly.target.move_to(target_box)
-                self.play(MoveToTarget(fly))
+                    # fly a box from the seed to a match
+                    fly = seed.copy()
+                    fly.generate_target()
+                    target_box = ref[j:m.end()]
+                    fly.target.move_to(target_box)
+                    self.play(MoveToTarget(fly))
 
-                # add crumbs before this match while moving a slider backwards through the query
-                crumb = Crumb()
-                crumb.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
-                crumb.shift(delta[num])
-                ul = Underline(query[seed.i], color=c)
+                    # add crumbs before this match while moving a slider backwards through the query
+                    crumb = Crumb()
+                    crumb.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
+                    crumb.shift(delta[num])
+                    ul = Underline(query[seed.i], color=c)
 
-                self.play(Create(ul), Create(crumb), Flash(crumb, color=c, line_length=SMALL_BUFF))
-                for i in range(seed.i-1, -1, -1): # i in query
-                    j -= 1
-                    if j<0 or ref.text[j]=='.': break
-                    crumb = crumb.copy()
-                    trace = TracedPath(crumb.get_center, dissipating_time=0.5, stroke_opacity=[0, 1], stroke_color=c, stroke_width=4.0)
-                    self.add(crumb, trace)
-                    crumb_to = Crumb()
-                    crumb_to.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
-                    crumb_to.shift(delta[num])
+                    self.play(Create(ul), Create(crumb), Flash(crumb, color=c, line_length=SMALL_BUFF))
+                    for i in range(seed.i-1, -1, -1): # i in query
+                        j -= 1
+                        if j<0 or ref.text[j]=='.': break
+                        crumb = crumb.copy()
+                        trace = TracedPath(crumb.get_center, dissipating_time=0.5, stroke_opacity=[0, 1], stroke_color=c, stroke_width=4.0)
+                        self.add(crumb, trace)
+                        crumb_to = Crumb()
+                        crumb_to.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
+                        crumb_to.shift(delta[num])
+                        self.play(
+                            crumb.animate(path_arc=PI/2).move_to(crumb_to),
+                            ul.animate().move_to(Underline(query[i])))
                     self.play(
-                        crumb.animate(path_arc=PI/2).move_to(crumb_to),
-                        ul.animate().move_to(Underline(query[i])))
-                self.play(
-                    Uncreate(ul),
-                    FadeOut(fly))
-
-        #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
-        #self.play(Create(seeds_brace_label))
+                        Uncreate(ul),
+                        FadeOut(fly))
