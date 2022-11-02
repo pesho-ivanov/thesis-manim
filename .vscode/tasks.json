@@ -10,7 +10,7 @@
             //"command": "echo ${workspaceFolder}",
             //"command": "pip3 show manim",
             //"command": "python -m manim -ql ${file} SeedHeuristicPrecomputation",
-            "command": "manim -ql ${file} --disable_caching", // -v DEBUG 
+            "command": "manim -pql ${file} --disable_caching", // -v DEBUG 
             "problemMatcher": [],
             "group": {
                 "kind": "build",
