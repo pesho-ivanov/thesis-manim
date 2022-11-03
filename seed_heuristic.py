@@ -3,7 +3,7 @@ from manim_voiceover import VoiceoverScene
 #from manim_voiceover.services.gtts import GTTSService
 from manim_voiceover.services.azure import AzureService
 import re
-import regex
+import regex  # for finding the shortest edit distance
 
 #import pdb; pdb.set_trace()
 
@@ -17,7 +17,7 @@ import regex
 #seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
 #self.play(Create(seeds_brace_label))
 
-class SeedHeuristicPrecomputation(VoiceoverScene):
+class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
     def mywait(self):
         self.wait(0.5)
 
@@ -28,9 +28,15 @@ class SeedHeuristicPrecomputation(VoiceoverScene):
         #self.set_speech_service(GTTSService())
         self.set_speech_service(
             AzureService(
-                voice = "en-US-AriaNeural",
-                style ="newscast-casual",
-                global_speed = 1.15
+                voice = "en-CA-LiamNeural",
+                #voice = "en-NZ-MitchellNeural",
+                #voice = "en-CA-ClaraNeural",
+                #voice = "en-US-AriaNeural",
+                style = "friendly", # "shouting", #"whispering",
+                #style = "advertisement_upbeat",
+                #style ="poetry-reading",
+                #style ="newscast-casual",
+                #global_speed = 1.15
             )
         )
 
@@ -85,16 +91,41 @@ class SeedHeuristicPrecomputation(VoiceoverScene):
             target = ref[r.start():r.end()]
             target_box = SurroundingRectangle(target, buff=0.06)
             self.play(fly.animate.become(target))
-            self.play(ShowPassingFlash(
-                        target_box,
-                        run_time=2,
-                        time_width=2.0))
+            self.play(
+                ShowPassingFlash(
+                    target_box,
+                    run_time=2,
+                    time_width=2.0))
+#                run_time=tracker.duration)
         self.mywait()
 
-        with self.voiceover(text="We will use the A-star shortest path algorithm to find optimal alignments very fast.",
-                      subcaption="We will use the A* shortest path algorithm to find optimal alignments very fast.") as tracker:
-            pass
-        # TODO: add A*
+        with self.voiceover(text="We will use the A-star shortest path algorithm to find optimal alignments very efficiently.",
+                      subcaption="We will use the A* shortest path algorithm to find optimal alignments very efficiently.") as tracker:
+            # TODO: draw a magnet at node 9, or reverse the Flash ray direction
+            self.camera.frame.save_state()
+            EXP = GREEN
+            TARGET = RED
+            vertices = [1, 2, 3, 4, 5, 6, 7, 8, 9]  
+            edges = [(1, 6), (1, 7), (7, 8),
+                    (2, 3), (2, 4), (2, 5), (2, 8), (2, 6), (2, 7), 
+                    (3, 4), (3, 6),
+                    (4, 5), (4, 9)]  
+            g = Graph(vertices, edges, layout="kamada_kawai", layout_scale=3, labels=True)
+            g.scale(0.4)
+            g.next_to(query, UP+RIGHT)
+            self.play(Create(g, run_time=0.5))
+            self.play(self.camera.frame.animate.scale(0.5).move_to(g))
+            self.play(g.vertices[1].animate.set_color(EXP), Flash(g.vertices[1], color=EXP),
+                      g.vertices[9].animate.set_color(TARGET), Flash(g.vertices[1], color=TARGET))
+            self.play(g.edges[(1,6)].animate.set_stroke(EXP), g.vertices[6].animate.set_color(EXP), Flash(g.vertices[6], color=EXP))
+            self.play(g.edges[(3,6)].animate.set_stroke(EXP), g.vertices[3].animate.set_color(EXP), Flash(g.vertices[3], color=EXP),
+                      g.edges[(1,7)].animate.set_stroke(EXP), g.vertices[7].animate.set_color(EXP), Flash(g.vertices[7], color=EXP))
+            self.play(g.edges[(2,6)].animate.set_stroke(EXP), g.vertices[2].animate.set_color(EXP), Flash(g.vertices[2], color=EXP),
+                      g.edges[(3,4)].animate.set_stroke(EXP), g.vertices[4].animate.set_color(EXP), Flash(g.vertices[4], color=EXP))
+            self.play(g.edges[(4,9)].animate.set_stroke(EXP), g.vertices[9].animate.set_color(EXP), Flash(g.vertices[9], color=EXP))
+            self.mywait()
+            self.play(Uncreate(g), run_time=0.5)
+            self.play(Restore(self.camera.frame))
 
         with self.voiceover(text="To direct the A-star search, we will first divide the read into short seeds.") as tracker:
             # split query into seeds
@@ -116,13 +147,14 @@ class SeedHeuristicPrecomputation(VoiceoverScene):
                     ShowPassingFlash(
                         seed.seed_box,
                         run_time=2,
-                        time_width=2.0))
+                        time_width=2.0),
+                    run_time=tracker.duration)
                 num += 1
         self.mywait()
 
         with self.voiceover(
             text="We will now match each seed to all its exact occurences and mark the preceding reference positions with what we call bread crumbs.\
-                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us home, to a best alignment.") as tracker:
+                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us home, to our best alignment.") as tracker:
             def CrumbFactory(num, c):
                 sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
                 tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.05)
