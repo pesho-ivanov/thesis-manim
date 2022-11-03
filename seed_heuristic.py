@@ -58,10 +58,13 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
         colors = [blues, yellows, purples, greens]
         delta = [0.08*d for d in [UP+LEFT, UP+RIGHT, DOWN+LEFT, DOWN+RIGHT]]
 
-        background = ImageMobject("external/blackboard-big.jpg")
-        #corona.scale(1.2)
-        #corona.to_edge(RIGHT, buff=1)
-        self.add(background)
+        #background = ImageMobject("external/blackboard-huge.jpg")
+        #background.to_edge(RIGHT)
+        #self.bring_to_back(background)
+        #self.add(background)
+
+        #self.camera.background_image = "external/blackboard-medium.jpg"
+        #self.camera.init_background()
 
         # introduce the reads
         with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker:
@@ -72,8 +75,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                 Write(query_label),
                 Write(query),
                 run_time=tracker.duration)
-        self.mywait()
-        return
+            self.mywait()
 
         # introduce reference
         with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
@@ -85,7 +87,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                 Write(ref_label),
                 Write(ref),
                 run_time=tracker.duration)
-        self.mywait()
+            self.mywait()
 
         with self.voiceover(text="We will now show how to find the where each query read aligns in a reference.") as tracker:
             # TODO: visualize the mistakes and talk about edit distance
@@ -104,7 +106,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                     run_time=2,
                     time_width=2.0))
 #                run_time=tracker.duration)
-        self.mywait()
+            self.mywait()
 
         with self.voiceover(text="We will use the A-star shortest path algorithm to find optimal alignments very efficiently.",
                       subcaption="We will use the A* shortest path algorithm to find optimal alignments very efficiently.") as tracker:
@@ -119,11 +121,11 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                     (4, 5), (4, 9)]  
             g = Graph(vertices, edges, layout="kamada_kawai", layout_scale=3, labels=True)
             g.scale(0.4)
-            g.next_to(query, UP+RIGHT)
-            self.play(Create(g, run_time=0.5))
+            g.next_to(query, 0.3*UP + 2*RIGHT)
+            self.play(Create(g))
             self.play(self.camera.frame.animate.scale(0.5).move_to(g))
             self.play(g.vertices[1].animate.set_color(EXP), Flash(g.vertices[1], color=EXP),
-                      g.vertices[9].animate.set_color(TARGET), Flash(g.vertices[1], color=TARGET))
+                      g.vertices[9].animate.set_color(TARGET), Flash(g.vertices[9], color=TARGET))
             self.play(g.edges[(1,6)].animate.set_stroke(EXP), g.vertices[6].animate.set_color(EXP), Flash(g.vertices[6], color=EXP))
             self.play(g.edges[(3,6)].animate.set_stroke(EXP), g.vertices[3].animate.set_color(EXP), Flash(g.vertices[3], color=EXP),
                       g.edges[(1,7)].animate.set_stroke(EXP), g.vertices[7].animate.set_color(EXP), Flash(g.vertices[7], color=EXP))
@@ -131,8 +133,11 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                       g.edges[(3,4)].animate.set_stroke(EXP), g.vertices[4].animate.set_color(EXP), Flash(g.vertices[4], color=EXP))
             self.play(g.edges[(4,9)].animate.set_stroke(EXP), g.vertices[9].animate.set_color(EXP), Flash(g.vertices[9], color=EXP))
             self.mywait()
-            self.play(Uncreate(g), run_time=0.5)
-            self.play(Restore(self.camera.frame))
+            self.play(
+                Uncreate(g), 
+                Restore(self.camera.frame),
+                run_time=0.5)
+        return
 
         with self.voiceover(text="To direct the A-star search, we will first divide the read into short seeds.") as tracker:
             # split query into seeds
