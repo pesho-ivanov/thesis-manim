@@ -58,6 +58,12 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
         colors = [blues, yellows, purples, greens]
         delta = [0.08*d for d in [UP+LEFT, UP+RIGHT, DOWN+LEFT, DOWN+RIGHT]]
 
+        background = ImageMobject("external/blackboard-big.jpg")
+        #corona.scale(1.2)
+        #corona.to_edge(RIGHT, buff=1)
+        self.add(background)
+
+        # introduce the reads
         with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker:
             query.shift(1.0*(UP+RIGHT))
             query_label = Text("Query", slant=ITALIC, font_size=fsz, color=grey)
@@ -67,6 +73,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                 Write(query),
                 run_time=tracker.duration)
         self.mywait()
+        return
 
         # introduce reference
         with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
