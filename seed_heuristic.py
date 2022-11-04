@@ -66,25 +66,23 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
         #self.camera.background_image = "external/blackboard-medium.jpg"
         #self.camera.init_background()
 
-        # introduce the reads
         with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker:
             query.shift(1.0*(UP+RIGHT))
             query_label = Text("Query", slant=ITALIC, font_size=fsz, color=grey)
             query_label.next_to(query, 15 * LEFT)
             self.play(
-                Write(query_label),
+                FadeIn(query_label),
                 Write(query),
                 run_time=tracker.duration)
             self.mywait()
 
-        # introduce reference
         with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
-            ref.next_to(query, DOWN, buff=1.0)
+            ref.next_to(query, UP, buff=1.0)
             ref_label = Text("Reference", slant=ITALIC, font_size=fsz, color=grey)
             ref_label.next_to(ref, LEFT)
             ref_label.align_to(query_label, LEFT)
             self.play(
-                Write(ref_label),
+                FadeIn(ref_label),
                 Write(ref),
                 run_time=tracker.duration)
             self.mywait()
@@ -103,7 +101,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
             self.play(
                 ShowPassingFlash(
                     target_box,
-                    run_time=2,
+                    #run_time=1.0,
                     time_width=2.0))
 #                run_time=tracker.duration)
             self.mywait()
@@ -121,7 +119,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                     (4, 5), (4, 9)]  
             g = Graph(vertices, edges, layout="kamada_kawai", layout_scale=3, labels=True)
             g.scale(0.4)
-            g.next_to(query, 0.3*UP + 2*RIGHT)
+            g.next_to(query, 0.3*DOWN + 2*RIGHT)
             self.play(Create(g))
             self.play(self.camera.frame.animate.scale(0.5).move_to(g))
             self.play(g.vertices[1].animate.set_color(EXP), Flash(g.vertices[1], color=EXP),
@@ -137,7 +135,6 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                 Uncreate(g), 
                 Restore(self.camera.frame),
                 run_time=0.5)
-        return
 
         with self.voiceover(text="To direct the A-star search, we will first divide the read into short seeds.") as tracker:
             # split query into seeds
@@ -154,13 +151,14 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                 seed_label.next_to(seed.seed_box, UP, buff=0.1)
                 seeds.add(VGroup(seed, seed_label))
                 self.play(
-                    Write(seed_label),
+                    FadeIn(seed_label),
                     seed.animate.set_color(c[0]),
                     ShowPassingFlash(
                         seed.seed_box,
-                        run_time=2,
-                        time_width=2.0),
-                    run_time=tracker.duration)
+                        #run_time=1.0,
+                        time_width=0.5,
+                        rate_func=rate_functions.ease_out_sine))
+#                    run_time=tracker.duration)
                 num += 1
         self.mywait()
 
@@ -196,8 +194,9 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                     crumb.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
                     crumb.shift(delta[num])
                     ul = Underline(query[seed.i], color=c)
+                    first_crumb = fly.copy()
 
-                    self.play(Create(ul), Create(crumb), Flash(crumb, color=c, line_length=SMALL_BUFF))
+                    self.play(Create(ul), first_crumb.animate.become(crumb))
                     for i in range(seed.i-1, -1, -1): # i in query
                         j -= 1
                         if j<0 or ref.text[j]=='.': break
@@ -210,6 +209,4 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
                         self.play(
                             crumb.animate(path_arc=PI/2).move_to(crumb_to),
                             ul.animate().move_to(Underline(query[i])))
-                    self.play(
-                        Uncreate(ul),
-                        FadeOut(fly))
+                    self.play(Uncreate(ul))
