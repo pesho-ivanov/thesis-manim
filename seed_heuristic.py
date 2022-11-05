@@ -74,18 +74,13 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         #    q = Text(q_text, slant=ITALIC, font_size=font_sz, color=grey)
         #    self.play(FadeIn(q))
 
-        with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker:
-            print(tracker.duration)
-            with self.norm_play(2*tracker.duration) as normed:
-                query.shift(1.0*(UP+RIGHT))
-                query_label = Text("Query", slant=ITALIC, font_size=font_sz, color=grey)
-                query_label.next_to(query, 15 * LEFT)
-                normed.play(FadeIn(query_label, run_time=5.0))
-                normed.play(
-                    #FadeIn(query_label),
-                    Write(query, run_time=1.0)
-                    )
-                self.wait(10.0)
+        with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker,\
+                self.norm_play(tracker.duration) as normed:
+            query.shift(1.0*(UP+RIGHT))
+            query_label = Text("Query", slant=ITALIC, font_size=font_sz, color=grey)
+            query_label.next_to(query, 15 * LEFT)
+            normed.play(FadeIn(query_label), Write(query))
+        self.wait()
         return
 
         with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
