@@ -1,9 +1,15 @@
+import string
+import random
+
 from manim import *
 from manim_voiceover import VoiceoverScene
 #from manim_voiceover.services.gtts import GTTSService
 from manim_voiceover.services.azure import AzureService
 import re
 import regex  # for finding the shortest edit distance
+
+from contextlib import contextmanager
+from norm_play import NormPlay
 
 #import pdb; pdb.set_trace()
 
@@ -14,13 +20,10 @@ import regex  # for finding the shortest edit distance
 # - spread the crumbs up the trie
 # - another scene: Alignmnet
 
-#seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=fsz)
+#seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=font_sz)
 #self.play(Create(seeds_brace_label))
 
-class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
-    def mywait(self):
-        self.wait(0.5)
-
+class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
     def setup_voiceover(self):
         os.environ["AZURE_SUBSCRIPTION_KEY"] = "60c24696a4da49ba94a903def1577350"
         os.environ["AZURE_SERVICE_REGION"] = "eastus"
@@ -42,12 +45,12 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
 
     def construct(self):
         self.setup_voiceover()
+        n = 1
         k = 2
-        #query = Text("AACC")
         query = Text("AACCGGTT")
         ref = Text("...GGAAGTCAACCGATT...") #\n\n..GATCCGGCTT..")
 
-        fsz = 28
+        font_sz = 28
 
         # colors [dark, light]
         grey = "#888888"
@@ -66,19 +69,28 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene):
         #self.camera.background_image = "external/blackboard-medium.jpg"
         #self.camera.init_background()
 
+        #for i in range(n):
+        #    q_text = ''.join(random.choices(string.ascii_uppercase + string.digits, k=len(query.text)))
+        #    q = Text(q_text, slant=ITALIC, font_size=font_sz, color=grey)
+        #    self.play(FadeIn(q))
+
         with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker:
-            query.shift(1.0*(UP+RIGHT))
-            query_label = Text("Query", slant=ITALIC, font_size=fsz, color=grey)
-            query_label.next_to(query, 15 * LEFT)
-            self.play(
-                FadeIn(query_label),
-                Write(query),
-                run_time=tracker.duration)
-            self.mywait()
+            print(tracker.duration)
+            with self.norm_play(2*tracker.duration) as normed:
+                query.shift(1.0*(UP+RIGHT))
+                query_label = Text("Query", slant=ITALIC, font_size=font_sz, color=grey)
+                query_label.next_to(query, 15 * LEFT)
+                normed.play(FadeIn(query_label, run_time=5.0))
+                normed.play(
+                    #FadeIn(query_label),
+                    Write(query, run_time=1.0)
+                    )
+                self.wait(10.0)
+        return
 
         with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
             ref.next_to(query, UP, buff=1.0)
-            ref_label = Text("Reference", slant=ITALIC, font_size=fsz, color=grey)
+            ref_label = Text("Reference", slant=ITALIC, font_size=font_sz, color=grey)
             ref_label.next_to(ref, LEFT)
             ref_label.align_to(query_label, LEFT)
             self.play(
