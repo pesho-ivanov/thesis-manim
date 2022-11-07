@@ -7,9 +7,10 @@ from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.azure import AzureService
 import re
 import regex  # for finding the shortest edit distance
+from typing import Generator
 
 from contextlib import contextmanager
-from norm_play import NormPlay
+from norm_play import NormPlay, NormedPlayer
 
 #import pdb; pdb.set_trace()
 
@@ -24,6 +25,15 @@ from norm_play import NormPlay
 #self.play(Create(seeds_brace_label))
 
 class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
+    @contextmanager
+    def voiceover_norm(self, wait_after=1.0, **kwargs) -> Generator[NormedPlayer, None, None]:
+        try:
+            with self.voiceover(**kwargs) as tracker:
+                with self.norm_play(tracker.duration) as normed:
+                    yield normed
+        finally:
+            self.wait(wait_after)
+
     def setup_voiceover(self):
         os.environ["AZURE_SUBSCRIPTION_KEY"] = "60c24696a4da49ba94a903def1577350"
         os.environ["AZURE_SERVICE_REGION"] = "eastus"
@@ -74,44 +84,36 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         #    q = Text(q_text, slant=ITALIC, font_size=font_sz, color=grey)
         #    self.play(FadeIn(q))
 
-        with self.voiceover(text="DNA sequencing machines produce large amount of \"reads\".") as tracker,\
-                self.norm_play(tracker.duration) as normed:
+        #with self.voiceover_norm(text="DNA sequencing machines produce large amount of \"reads\".") as normed:
+        with self.voiceover_norm(text="DNA sequencing machines produce large amount of \"reads\".") as normed:
             query.shift(1.0*(UP+RIGHT))
             query_label = Text("Query", slant=ITALIC, font_size=font_sz, color=grey)
             query_label.next_to(query, 15 * LEFT)
-            normed.play(FadeIn(query_label), Write(query))
-        self.wait()
-        return
+            normed.play(FadeIn(query_label))
+            normed.play(Write(query))
 
-        with self.voiceover(text="If we analyse a known organism, we can compare the new data to a reference genome.") as tracker:
+        with self.voiceover_norm(text="If we analyse a known organism, we can compare the new data to a reference genome.") as normed:
             ref.next_to(query, UP, buff=1.0)
             ref_label = Text("Reference", slant=ITALIC, font_size=font_sz, color=grey)
             ref_label.next_to(ref, LEFT)
             ref_label.align_to(query_label, LEFT)
-            self.play(
-                FadeIn(ref_label),
-                Write(ref),
-                run_time=tracker.duration)
-            self.mywait()
+            normed.play(FadeIn(ref_label), Write(ref))
 
+        #with self.voiceover_norm(text="We will now show how to find the where each query read aligns in a reference.") as normed:
         with self.voiceover(text="We will now show how to find the where each query read aligns in a reference.") as tracker:
-            # TODO: visualize the mistakes and talk about edit distance
+            with self.norm_play(duration=tracker.duration) as normed:
+                # TODO: visualize the mistakes and talk about edit distance
 
-            # search for the best match (edit distance)
-            r = regex.search(r'(?b:{})'.format(query.text)+"{e}", ref.text)
+                # search for the best match (edit distance)
+                r = regex.search(r'(?b:{})'.format(query.text)+"{e}", ref.text)
 
-            # fly a box from the seed to a match
-            fly = query.copy()
-            target = ref[r.start():r.end()]
-            target_box = SurroundingRectangle(target, buff=0.06)
-            self.play(fly.animate.become(target))
-            self.play(
-                ShowPassingFlash(
-                    target_box,
-                    #run_time=1.0,
-                    time_width=2.0))
-#                run_time=tracker.duration)
-            self.mywait()
+                # fly a box from the seed to a match
+                fly = query.copy()
+                target = ref[r.start():r.end()]
+                target_box = SurroundingRectangle(target, buff=0.06)
+                normed.play(fly.animate.become(target))
+                normed.play(ShowPassingFlash(target_box, time_width=2.0))
+                pass
 
         with self.voiceover(text="We will use the A-star shortest path algorithm to find optimal alignments very efficiently.",
                       subcaption="We will use the A* shortest path algorithm to find optimal alignments very efficiently.") as tracker:
@@ -137,7 +139,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             self.play(g.edges[(2,6)].animate.set_stroke(EXP), g.vertices[2].animate.set_color(EXP), Flash(g.vertices[2], color=EXP),
                       g.edges[(3,4)].animate.set_stroke(EXP), g.vertices[4].animate.set_color(EXP), Flash(g.vertices[4], color=EXP))
             self.play(g.edges[(4,9)].animate.set_stroke(EXP), g.vertices[9].animate.set_color(EXP), Flash(g.vertices[9], color=EXP))
-            self.mywait()
+            self.wait()
             self.play(
                 Uncreate(g), 
                 Restore(self.camera.frame),
@@ -167,7 +169,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                         rate_func=rate_functions.ease_out_sine))
 #                    run_time=tracker.duration)
                 num += 1
-        self.mywait()
+        self.wait()
 
         with self.voiceover(
             text="We will now match each seed to all its exact occurences and mark the preceding reference positions with what we call bread crumbs.\

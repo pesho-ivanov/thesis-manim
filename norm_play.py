@@ -10,34 +10,37 @@ class NormedPlayer:
         self.total_duration: float = 0.0
     
     def play(self, *args, **kwargs):
-        duration = self.scene.get_run_time(args)
+        animations = self.scene.compile_animations(*args, **kwargs)
+        duration = self.scene.get_run_time(animations)
         self.total_duration += duration
-        self.plays.append(tuple((args, kwargs)))
+        self.plays.append((animations, kwargs))
+        print(animations)
 
     def wait(self, duration: float = DEFAULT_WAIT_TIME, **kwargs):
         self.total_duration += duration
-        args = (Wait(duration),)
+        animations = (Wait(duration),)
         assert 'run_time' not in kwargs
         kwargs['run_time'] = duration
-        self.plays.append(tuple((args, kwargs)))
+        self.plays.append((animations, kwargs))
 
     def pause(self, duration: float = DEFAULT_WAIT_TIME):
         self.wait(duration=duration, frozen_frame=True)
 
-    def wait_until(self, stop_condition, max_time=60):
-        self.wait(max_time, stop_condition=stop_condition)
+    def wait_until(self, *args, **kwargs):
+        self.wait(*args, **kwargs)
 
     def execute_plays(self):
         speed_factor = self.total_duration / self.target_duration
-        for (args, kwargs) in self.plays:
-            anims = AnimationGroup(*args)
+        for (animations, kwargs) in self.plays:
+            anim_group = AnimationGroup(*animations)
 
             if 'subcaption_duration' in kwargs and kwargs['subcaption_duration'] is not None:
                 kwargs['subcaption_duration'] *= speed_factor
             if 'subcaption_offset' in kwargs and kwargs['subcaption_offset'] is not None:
                 kwargs['subcaption_offset'] *= speed_factor
 
-            self.scene.play(ChangeSpeed(anims, speedinfo={0.0: speed_factor}), **kwargs)
+            ch_speed = ChangeSpeed(anim_group, speedinfo={0.0: speed_factor})
+            self.scene.play(ch_speed, **kwargs)
 
 class NormPlay(Scene):
     current_player: Optional[NormedPlayer]
