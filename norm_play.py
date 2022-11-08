@@ -13,15 +13,17 @@ class NormedPlayer:
         animations = self.scene.compile_animations(*args, **kwargs)
         duration = self.scene.get_run_time(animations)
         self.total_duration += duration
-        self.plays.append((animations, kwargs))
-        print(animations)
+        self.plays.append(('play', animations, kwargs))
+    
+    def add(self, *mobjects):
+        self.plays.append(('add', mobjects, None))
 
     def wait(self, duration: float = DEFAULT_WAIT_TIME, **kwargs):
         self.total_duration += duration
         animations = (Wait(duration),)
         assert 'run_time' not in kwargs
         kwargs['run_time'] = duration
-        self.plays.append((animations, kwargs))
+        self.plays.append(('play', animations, kwargs))
 
     def pause(self, duration: float = DEFAULT_WAIT_TIME):
         self.wait(duration=duration, frozen_frame=True)
@@ -31,16 +33,22 @@ class NormedPlayer:
 
     def execute_plays(self):
         speed_factor = self.total_duration / self.target_duration
-        for (animations, kwargs) in self.plays:
-            anim_group = AnimationGroup(*animations)
+        for (action, animations, kwargs) in self.plays:
+            if action == 'play':
+                anim_group = AnimationGroup(*animations)
 
-            if 'subcaption_duration' in kwargs and kwargs['subcaption_duration'] is not None:
-                kwargs['subcaption_duration'] *= speed_factor
-            if 'subcaption_offset' in kwargs and kwargs['subcaption_offset'] is not None:
-                kwargs['subcaption_offset'] *= speed_factor
+                if 'subcaption_duration' in kwargs and kwargs['subcaption_duration'] is not None:
+                    kwargs['subcaption_duration'] *= speed_factor
+                if 'subcaption_offset' in kwargs and kwargs['subcaption_offset'] is not None:
+                    kwargs['subcaption_offset'] *= speed_factor
 
-            ch_speed = ChangeSpeed(anim_group, speedinfo={0.0: speed_factor})
-            self.scene.play(ch_speed, **kwargs)
+                # debug crashing of normed.play(fly.animate.become(target)) because of caching (without --disable_caching)
+                ch_speed = ChangeSpeed(anim_group, speedinfo={0.0: speed_factor})
+                self.scene.play(ch_speed, **kwargs)
+            elif action == 'add':
+                self.scene.add(*animations)
+            else:
+                raise TypeError(str(action) + " is not a recognied action.")
 
 class NormPlay(Scene):
     current_player: Optional[NormedPlayer]

@@ -25,6 +25,7 @@ from norm_play import NormPlay, NormedPlayer
 #self.play(Create(seeds_brace_label))
 
 class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
+    
     @contextmanager
     def voiceover_norm(self, wait_after=1.0, **kwargs) -> Generator[NormedPlayer, None, None]:
         try:
@@ -99,9 +100,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             ref_label.align_to(query_label, LEFT)
             normed.play(FadeIn(ref_label), Write(ref))
 
-        #with self.voiceover_norm(text="We will now show how to find the where each query read aligns in a reference.") as normed:
-        with self.voiceover(text="We will now show how to find the where each query read aligns in a reference.") as tracker:
-            with self.norm_play(duration=tracker.duration) as normed:
+        with self.voiceover_norm(text="We will now show how to find where each query read aligns in a reference.") as normed:
                 # TODO: visualize the mistakes and talk about edit distance
 
                 # search for the best match (edit distance)
@@ -113,10 +112,9 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 target_box = SurroundingRectangle(target, buff=0.06)
                 normed.play(fly.animate.become(target))
                 normed.play(ShowPassingFlash(target_box, time_width=2.0))
-                pass
 
-        with self.voiceover(text="We will use the A-star shortest path algorithm to find optimal alignments very efficiently.",
-                      subcaption="We will use the A* shortest path algorithm to find optimal alignments very efficiently.") as tracker:
+        with self.voiceover_norm(text="We will use the A-star shortest path algorithm to find optimal alignments very efficiently.",
+                      subcaption="We will use the A* shortest path algorithm to find optimal alignments very efficiently.") as normed:
             # TODO: draw a magnet at node 9, or reverse the Flash ray direction
             self.camera.frame.save_state()
             EXP = GREEN
@@ -129,23 +127,23 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             g = Graph(vertices, edges, layout="kamada_kawai", layout_scale=3, labels=True)
             g.scale(0.4)
             g.next_to(query, 0.3*DOWN + 2*RIGHT)
-            self.play(Create(g))
-            self.play(self.camera.frame.animate.scale(0.5).move_to(g))
-            self.play(g.vertices[1].animate.set_color(EXP), Flash(g.vertices[1], color=EXP),
+            normed.play(Create(g))
+            normed.play(self.camera.frame.animate.scale(0.5).move_to(g))
+            normed.play(g.vertices[1].animate.set_color(EXP), Flash(g.vertices[1], color=EXP),
                       g.vertices[9].animate.set_color(TARGET), Flash(g.vertices[9], color=TARGET))
-            self.play(g.edges[(1,6)].animate.set_stroke(EXP), g.vertices[6].animate.set_color(EXP), Flash(g.vertices[6], color=EXP))
-            self.play(g.edges[(3,6)].animate.set_stroke(EXP), g.vertices[3].animate.set_color(EXP), Flash(g.vertices[3], color=EXP),
+            normed.play(g.edges[(1,6)].animate.set_stroke(EXP), g.vertices[6].animate.set_color(EXP), Flash(g.vertices[6], color=EXP))
+            normed.play(g.edges[(3,6)].animate.set_stroke(EXP), g.vertices[3].animate.set_color(EXP), Flash(g.vertices[3], color=EXP),
                       g.edges[(1,7)].animate.set_stroke(EXP), g.vertices[7].animate.set_color(EXP), Flash(g.vertices[7], color=EXP))
-            self.play(g.edges[(2,6)].animate.set_stroke(EXP), g.vertices[2].animate.set_color(EXP), Flash(g.vertices[2], color=EXP),
+            normed.play(g.edges[(2,6)].animate.set_stroke(EXP), g.vertices[2].animate.set_color(EXP), Flash(g.vertices[2], color=EXP),
                       g.edges[(3,4)].animate.set_stroke(EXP), g.vertices[4].animate.set_color(EXP), Flash(g.vertices[4], color=EXP))
-            self.play(g.edges[(4,9)].animate.set_stroke(EXP), g.vertices[9].animate.set_color(EXP), Flash(g.vertices[9], color=EXP))
-            self.wait()
-            self.play(
+            normed.play(g.edges[(4,9)].animate.set_stroke(EXP), g.vertices[9].animate.set_color(EXP), Flash(g.vertices[9], color=EXP))
+            normed.wait()
+            normed.play(
                 Uncreate(g), 
                 Restore(self.camera.frame),
                 run_time=0.5)
 
-        with self.voiceover(text="To direct the A-star search, we will first divide the read into short seeds.") as tracker:
+        with self.voiceover_norm(text="To direct the A-star search, we will first divide the read into short seeds.") as normed:
             # split query into seeds
             seeds = VGroup()
             num = 0
@@ -159,21 +157,18 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 seed.seed_box = SurroundingRectangle(seed, buff=0.06, color=c[0])
                 seed_label.next_to(seed.seed_box, UP, buff=0.1)
                 seeds.add(VGroup(seed, seed_label))
-                self.play(
+                normed.play(
                     FadeIn(seed_label),
                     seed.animate.set_color(c[0]),
                     ShowPassingFlash(
                         seed.seed_box,
-                        #run_time=1.0,
                         time_width=0.5,
                         rate_func=rate_functions.ease_out_sine))
-#                    run_time=tracker.duration)
                 num += 1
-        self.wait()
 
-        with self.voiceover(
+        with self.voiceover_norm(
             text="We will now match each seed to all its exact occurences and mark the preceding reference positions with what we call bread crumbs.\
-                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us home, to our best alignment.") as tracker:
+                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us home, to our best alignment.") as normed:
             def CrumbFactory(num, c):
                 sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
                 tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.05)
@@ -187,7 +182,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 c = seed.get_color()
                 num = seed.num
                 Crumb = CrumbFactory(num, c)
-                self.play(Wiggle(seed), scale_value=1.2, run_time=1.5)
+                normed.play(Wiggle(seed), scale_value=1.2, run_time=1.5)
                 for m in re.finditer(seed.text, ref.text):
                     j = m.start()  # in ref
 
@@ -196,26 +191,26 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                     fly.generate_target()
                     target_box = ref[j:m.end()]
                     fly.target.move_to(target_box)
-                    self.play(MoveToTarget(fly))
+                    normed.play(MoveToTarget(fly))
 
                     # add crumbs before this match while moving a slider backwards through the query
                     crumb = Crumb()
                     crumb.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
                     crumb.shift(delta[num])
                     ul = Underline(query[seed.i], color=c)
-                    first_crumb = fly.copy()
+                    first_crumb = target_box.copy()
+                    normed.play(Create(ul), first_crumb.animate.become(crumb))
 
-                    self.play(Create(ul), first_crumb.animate.become(crumb))
                     for i in range(seed.i-1, -1, -1): # i in query
                         j -= 1
                         if j<0 or ref.text[j]=='.': break
                         crumb = crumb.copy()
                         trace = TracedPath(crumb.get_center, dissipating_time=0.5, stroke_opacity=[0, 1], stroke_color=c, stroke_width=4.0)
-                        self.add(crumb, trace)
+                        normed.add(crumb, trace)
                         crumb_to = Crumb()
                         crumb_to.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
                         crumb_to.shift(delta[num])
-                        self.play(
+                        normed.play(
                             crumb.animate(path_arc=PI/2).move_to(crumb_to),
                             ul.animate().move_to(Underline(query[i])))
-                    self.play(Uncreate(ul))
+                    normed.play(Uncreate(ul))
