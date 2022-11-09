@@ -21,10 +21,7 @@ from norm_play import NormPlay, NormedPlayer
 # - spread the crumbs up the trie
 # - another scene: Alignmnet
 
-#seeds_brace_label = BraceLabel(seeds, "seeds", label_constructor=Text, brace_direction=UP, font_size=font_sz)
-#self.play(Create(seeds_brace_label))
-
-n = 1  # number of reads 
+n = 10  # number of reads 
 k = 2  # kmer size
 d = 3  # trie depth
 query = Text("AACCGGTT")
@@ -90,26 +87,26 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         #self.camera.background_image = "external/blackboard-medium.jpg"
         #self.camera.init_background()
 
-        #for i in range(n):
-        #    q_text = ''.join(random.choices(string.ascii_uppercase + string.digits, k=len(query.text)))
-        #    q = mylabel(q_text)
-        #    self.play(FadeIn(q))
+        # show many reads
+        with self.voiceover_norm(text="DNA sequencing machines produce large amount of \"reads\".") as normed:
+            rand_vec = lambda : UP*random.normalvariate(0.0, 1.0) + RIGHT*random.normalvariate(0.0, 3.0)
+            Q = [ Text(''.join(random.choices("ACGT", k=len(query.text)))).shift(rand_vec()) for _ in range(n) ]
+            anims = [ Succession(FadeIn(q), FadeOut(q)) for q in Q ]
+            self.play(LaggedStart(*anims, lag_ratio=0.2))
 
         # shows query
-        with self.voiceover_norm(text="DNA sequencing machines produce large amount of \"reads\".") as normed:
+        with self.voiceover_norm(text="Each of them originates from a certain genome location.") as normed:
             query.shift(1.0*(DOWN+RIGHT))
-            label_query = mylabel("Query")
-            label_query.next_to(query, 15 * LEFT)
+            label_query = mylabel("Query").next_to(query, 15 * LEFT)
             normed.play(FadeIn(label_query))
             normed.play(Write(query))
 
         # shows ref
         with self.voiceover_norm(text="If we analyse a known organism, we can compare the new data to a reference genome.") as normed:
             ref.next_to(query, UP, buff=1.0)
-            label_ref = mylabel("Reference")
-            label_ref.next_to(ref, LEFT)
-            label_ref.align_to(label_query, LEFT)
+            label_ref = mylabel("Reference").next_to(ref, LEFT).align_to(label_query, LEFT)
             normed.play(FadeIn(label_ref), Write(ref))
+        return
 
         # aligns whole query to best ref location
         with self.voiceover_norm(text="We will now show how to find where each query read aligns in a reference.") as normed:
@@ -138,10 +135,8 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                     (3, 4), (3, 6),
                     (4, 5), (4, 9)]  
             g = Graph(vertices, edges, layout="kamada_kawai", layout_scale=3, labels=True)
-            g.scale(0.4)
-            g.next_to(query, 0.3*DOWN + 2*RIGHT)
-            normed.play(Create(g))
-            normed.play(self.camera.frame.animate.scale(0.5).move_to(g))
+            g.scale(0.4).next_to(query, 0.3*DOWN + 2*RIGHT)
+            normed.play(Create(g), self.camera.frame.animate.scale(0.5).move_to(g))
             normed.play(g.vertices[1].animate.set_color(EXP), Flash(g.vertices[1], color=EXP),
                       g.vertices[9].animate.set_color(TARGET), Flash(g.vertices[9], color=TARGET))
             normed.play(g.edges[(1,6)].animate.set_stroke(EXP), g.vertices[6].animate.set_color(EXP), Flash(g.vertices[6], color=EXP))
@@ -178,18 +173,27 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                         time_width=0.5,
                         rate_func=rate_functions.ease_out_sine))
                 num += 1
+            seeds_brace_label = BraceLabel(seeds,
+                text=("seeds", ),
+                label_constructor=Text,
+                brace_direction=DOWN,
+                font_size=font_sz,
+                color=grey,
+                #slant=ITALIC,
+                )
+            self.play(FadeIn(seeds_brace_label))
 
         # matches all seeds on query and puts crumbs on reference
         with self.voiceover_norm(
             text="We will now match each seed to all its exact occurences and mark the preceding reference positions with what we call bread crumbs.\
-                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us home, to our best alignment.") as normed:
+                These crumbs will prove handy when we will want to know how promising a certain direction is for bringing us to a best alignment.") as normed:
             def CrumbFactory(num, c):
                 sq_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08)
                 tri_f = lambda: Triangle(color=c, fill_color=c, fill_opacity=1).scale(0.05)
                 romb_f = lambda: Square(color=c, fill_color=c, fill_opacity=1, side_length=0.08).rotate(PI/4)
                 dot_f = lambda: Circle(color=c, fill_color=c, fill_opacity=1, radius=0.05)
                 crumb_constructor = [ sq_f, tri_f, romb_f, dot_f ]
-                return crumb_constructor[num]
+                return crumb_constructor[num%len(crumb_constructor)]
 
             # match seeds onto reference
             for (seed, label) in seeds:
@@ -230,17 +234,13 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                     normed.play(Uncreate(slider))
 
         # builds trie
-        with self.voiceover_norm(
-            text="In order to give the possibility to start our search from one place, we will aggregate the the whole reference into a trie index.") as normed:
+        with self.voiceover_norm(text="In order to give the possibility to start our search from one place, we will aggregate the the whole reference into a trie index.") as normed:
             vertices = ['root', 'A', 'C', 'G', 'T']  
             edges = [('root', 'A'), ('root', 'C')]
             partitions = [['A', 'C', 'G', 'T'], ['root']]
             g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_scale=3, layout_config={'align': 'horizontal'}, labels=True)
-            g.scale(0.4)
-            g.next_to(ref, UP)
-            label_trie = mylabel('Trie')
-            label_trie.next_to(g, LEFT)
-            label_trie.align_to(label_ref, LEFT)
+            g.scale(0.4).next_to(ref, UP)
+            label_trie = mylabel('Trie').next_to(g, LEFT).align_to(label_ref, LEFT)
             normed.play(FadeIn(label_trie), Create(g))
 
             for i in range(0,len(ref),d):
@@ -248,9 +248,16 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 kmer.text = query.text[i:i+d]
                 #kmer.box = SurroundingRectangle(kmer, buff=0.06, color=YELLOW)
 
-            #new_edges = [('root', 'G')]
+            new_edges = [('root', 'G')]
             #edge_config = {('root', 'G'): {'weight': 0.6}}
-            #group = g.add_edges(*new_edges, edge_config=edge_config)
-            #normed.play(Create(group))
+            group = g.add_edges(*new_edges)
+            #TexMobject(label).move_to(point)
+            normed.play(Create(group))
+
+            new_edges = [('root', 'G')]
+            #edge_config = {('root', 'G'): {'weight': 0.6}}
+            group = g.add_edges(*new_edges)
+            #TexMobject(label).move_to(point)
+            normed.play(Create(group))
 
         # crumbs on trie
