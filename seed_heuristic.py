@@ -21,7 +21,7 @@ from norm_play import NormPlay, NormedPlayer
 # - spread the crumbs up the trie
 # - another scene: Alignmnet
 
-n = 10  # number of reads 
+n = 3 #10  # number of reads 
 k = 2  # kmer size
 d = 3  # trie depth
 query = Text("AACCGGTT")
@@ -76,38 +76,30 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             )
         )
 
-    def construct(self):
-        self.setup_voiceover()
-
-        #background = ImageMobject("external/blackboard-huge.jpg")
-        #background.to_edge(RIGHT)
-        #self.bring_to_back(background)
-        #self.add(background)
-
-        #self.camera.background_image = "external/blackboard-medium.jpg"
-        #self.camera.init_background()
-
+    def ref_query(self):
         # show many reads
         with self.voiceover_norm(text="DNA sequencing machines produce large amount of \"reads\".") as normed:
             rand_vec = lambda : UP*random.normalvariate(0.0, 1.0) + RIGHT*random.normalvariate(0.0, 3.0)
             Q = [ Text(''.join(random.choices("ACGT", k=len(query.text)))).shift(rand_vec()) for _ in range(n) ]
             anims = [ Succession(FadeIn(q), FadeOut(q)) for q in Q ]
-            self.play(LaggedStart(*anims, lag_ratio=0.2))
+            normed.play(LaggedStart(*anims, lag_ratio=0.2))
 
         # shows query
         with self.voiceover_norm(text="Each of them originates from a certain genome location.") as normed:
             query.shift(1.0*(DOWN+RIGHT))
-            label_query = mylabel("Query").next_to(query, 15 * LEFT)
-            normed.play(FadeIn(label_query))
+            query.label = mylabel("Query").next_to(query, 15 * LEFT)
+            normed.play(FadeIn(query.label))
             normed.play(Write(query))
 
         # shows ref
         with self.voiceover_norm(text="If we analyse a known organism, we can compare the new data to a reference genome.") as normed:
             ref.next_to(query, UP, buff=1.0)
-            label_ref = mylabel("Reference").next_to(ref, LEFT).align_to(label_query, LEFT)
-            normed.play(FadeIn(label_ref), Write(ref))
-        return
+            ref.label = mylabel("Reference").next_to(ref, LEFT).align_to(query.label, LEFT)
+            normed.play(FadeIn(ref.label), Write(ref))
 
+        return ref, query
+
+    def seeds_matches_crumbs(self, ref, query):
         # aligns whole query to best ref location
         with self.voiceover_norm(text="We will now show how to find where each query read aligns in a reference.") as normed:
                 # TODO: visualize the mistakes and talk about edit distance
@@ -116,11 +108,11 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 r = regex.search(r'(?b:{})'.format(query.text)+"{e}", ref.text)
 
                 # fly a box from the seed to a match
-                fly = query.copy()
-                target = ref[r.start():r.end()]
-                target_box = SurroundingRectangle(target, buff=0.06)
-                normed.play(fly.animate.become(target))
-                normed.play(ShowPassingFlash(target_box, time_width=2.0))
+                query_copy = query.copy()
+                query_match = ref[r.start():r.end()]
+                query_match.box = SurroundingRectangle(query_match, buff=0.06)
+                normed.play(query_copy.animate.become(query_match))
+                normed.play(ShowPassingFlash(query_match.box, time_width=2.0))
 
         # A* search graph example 
         with self.voiceover_norm(text="We will use the A-star shortest path algorithm to find optimal alignments very efficiently.",
@@ -204,19 +196,21 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 for m in re.finditer(seed.text, ref.text):
                     j = m.start()  # in ref
 
-                    # fly a box from the seed to a match
-                    fly = seed.copy()
-                    fly.generate_target()
-                    target_box = ref[j:m.end()]
-                    fly.target.move_to(target_box)
-                    normed.play(MoveToTarget(fly))
+                    # fly the seed to a match
+                    seed_copy = seed.copy()
+                    seed_copy.generate_target()
+                    match = ref[j:m.end()].set_color(c)
+                    seed_copy.target.move_to(match)
+                    arrow = Arrow(seed.get_top(), match.get_bottom(), stroke_width=3, tip_length=0.15, color=c,
+                        max_stroke_width_to_length_ratio=1000, max_tip_length_to_length_ratio=1000).set_opacity(0.25)
+                    normed.play(MoveToTarget(seed_copy), GrowArrow(arrow))
 
                     # add crumbs before this match while moving a slider backwards through the query
                     crumb = Crumb()
                     crumb.next_to(ref[j], UP, buff=1.5*SMALL_BUFF)
                     crumb.shift(delta[num])
                     slider = Overline(query[seed.i], color=c)
-                    first_crumb = target_box.copy()
+                    first_crumb = match.copy()
                     normed.play(Create(slider), first_crumb.animate.become(crumb))
 
                     for i in range(seed.i-1, -1, -1): # i in query
@@ -232,7 +226,8 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                             crumb.animate(path_arc=PI/2).move_to(crumb_to),
                             slider.animate().move_to(Overline(query[i])))
                     normed.play(Uncreate(slider))
-
+    
+    def trie(self, ref, query):
         # builds trie
         with self.voiceover_norm(text="In order to give the possibility to start our search from one place, we will aggregate the the whole reference into a trie index.") as normed:
             vertices = ['root', 'A', 'C', 'G', 'T']  
@@ -240,7 +235,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             partitions = [['A', 'C', 'G', 'T'], ['root']]
             g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_scale=3, layout_config={'align': 'horizontal'}, labels=True)
             g.scale(0.4).next_to(ref, UP)
-            label_trie = mylabel('Trie').next_to(g, LEFT).align_to(label_ref, LEFT)
+            label_trie = mylabel('Trie').next_to(g, LEFT).align_to(ref.label, LEFT)
             normed.play(FadeIn(label_trie), Create(g))
 
             for i in range(0,len(ref),d):
@@ -261,3 +256,18 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             normed.play(Create(group))
 
         # crumbs on trie
+
+    def construct(self):
+        self.setup_voiceover()
+
+        #background = ImageMobject("external/blackboard-huge.jpg")
+        #background.to_edge(RIGHT)
+        #self.bring_to_back(background)
+        #self.add(background)
+
+        #self.camera.background_image = "external/blackboard-medium.jpg"
+        #self.camera.init_background()
+
+        ref, query = self.ref_query()
+        self.seeds_matches_crumbs(ref, query)
+        self.trie(ref, query)
