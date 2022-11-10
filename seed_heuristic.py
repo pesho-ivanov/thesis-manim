@@ -15,17 +15,14 @@ from norm_play import NormPlay, NormedPlayer
 #import pdb; pdb.set_trace()
 
 # TODO:
-# - after first seeds, matches, crumbs: introduce the concept
-# - parallelize the matching and the crumbs after showing one
-# - build a trie
-# - spread the crumbs up the trie
+# - big scene with parallelized seeds, matching, crumbs
 # - another scene: Alignmnet
 
 n = 3 #10  # number of reads 
 k = 2  # kmer size
 d = 3  # trie depth
 query = Text("AACCGGTT")
-ref = Text("...GGAAGTCAACCGATT...") #\n\n..GATCCGGCTT..")
+ref = Text("GGAAGTCAACCGATT") #\n\n..GATCCGGCTT..")
 font_sz = 28
 
 # colors [dark, light]
@@ -227,35 +224,31 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                             slider.animate().move_to(Overline(query[i])))
                     normed.play(Uncreate(slider))
     
-    def trie(self, ref, query):
+    def trie(self, ref):
         # builds trie
         with self.voiceover_norm(text="In order to give the possibility to start our search from one place, we will aggregate the the whole reference into a trie index.") as normed:
-            vertices = ['root', 'A', 'C', 'G', 'T']  
-            edges = [('root', 'A'), ('root', 'C')]
-            partitions = [['A', 'C', 'G', 'T'], ['root']]
-            g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_scale=3, layout_config={'align': 'horizontal'}, labels=True)
-            g.scale(0.4).next_to(ref, UP)
-            label_trie = mylabel('Trie').next_to(g, LEFT).align_to(ref.label, LEFT)
-            normed.play(FadeIn(label_trie), Create(g))
+            partitions = []
+            for l in reversed(range(d)):
+                partitions.append({ ref.text[i:i+l] for i in range(len(ref)-d-1) })
+            vertices = [ node for layer in partitions for node in layer ] # ['', 'A', 'C', 'G', 'T']  
+            edges = []
+            g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_config={'align': 'horizontal'}, labels=False)
+            g.scale(1.0).next_to(ref, UP)
+            g.label = mylabel('Trie').next_to(g, LEFT).align_to(ref.label, LEFT)
+            normed.play(FadeIn(g.label), Create(g))
 
-            for i in range(0,len(ref),d):
-                kmer = query[i:i+d]
-                kmer.text = query.text[i:i+d]
-                #kmer.box = SurroundingRectangle(kmer, buff=0.06, color=YELLOW)
-
-            new_edges = [('root', 'G')]
-            #edge_config = {('root', 'G'): {'weight': 0.6}}
+            new_edges = [('', 'G'), ('G', 'GG')]
+            #edge_config = {('', 'G'): {'weight': 0.6}}
             group = g.add_edges(*new_edges)
             #TexMobject(label).move_to(point)
             normed.play(Create(group))
 
-            new_edges = [('root', 'G')]
-            #edge_config = {('root', 'G'): {'weight': 0.6}}
-            group = g.add_edges(*new_edges)
-            #TexMobject(label).move_to(point)
-            normed.play(Create(group))
+#            for i in range(len(ref)):
+#                kmer = ref[i:i+d]
+#                kmer.text = ref.text[i:i+d]
+#                normed.play(ref[i].animate.become(trie_edge_label))
 
-        # crumbs on trie
+        # TODO: crumbs on trie
 
     def construct(self):
         self.setup_voiceover()
@@ -269,5 +262,5 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         #self.camera.init_background()
 
         ref, query = self.ref_query()
-        self.seeds_matches_crumbs(ref, query)
-        self.trie(ref, query)
+        #self.seeds_matches_crumbs(ref, query)
+        self.trie(ref)
