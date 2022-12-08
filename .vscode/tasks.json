@@ -6,17 +6,20 @@
         {
             "label": "render",
             "type": "shell",
-            //"command": "pip show manim",
-            //"command": "echo ${workspaceFolder}",
-            //"command": "pip3 show manim",
-            //"command": "python -m manim -pql ${file} --disable_caching", //SeedHeuristicPrecomputation",
-            //"command": "manim -pql ${file}", // -v DEBUG 
-            "command": "manim -pql ${file} --disable_caching", // -v DEBUG 
+            "command": "manim -pql ${file} SeedHeuristicPrecomputation --disable_caching",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
         }
+    ],
+    "inputs": [
+        {
+            "id": "Scene",
+            "description": "Enter the scene you want to render",
+            "default": "",
+            "type": "promptString"
+        },
     ]
 }

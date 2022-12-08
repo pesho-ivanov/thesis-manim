@@ -36,6 +36,9 @@ class Overline(Line):
 class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
     font_sz = 28
 
+    def mytext(self, s):
+        return Text(s, font_size=self.font_sz, color=WHITE)
+
     def mylabel(self, s):
         return Text(s, slant=ITALIC, font_size=self.font_sz, color=grey)
     
@@ -71,7 +74,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         # show many reads
         with self.voiceover_norm(text="DNA sequencing machines produce large amount of \"reads\".") as normed:
             rand_vec = lambda : UP*random.normalvariate(0.0, 1.0) + RIGHT*random.normalvariate(0.0, 3.0)
-            Q = [ Text(''.join(random.choices("ACGT", k=len(query.text)))).shift(rand_vec()) for _ in range(number_of_queries) ]
+            Q = [ self.mytext(''.join(random.choices("ACGT", k=len(query.text)))).shift(rand_vec()) for _ in range(number_of_queries) ]
             anims = [ Succession(FadeIn(q), FadeOut(q)) for q in Q ]
             normed.play(LaggedStart(*anims, lag_ratio=0.2))
 
@@ -193,7 +196,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                     match = ref[j:m.end()].set_color(c)
                     seed_copy.target.move_to(match)
                     arrow = Arrow(seed.get_top(), match.get_bottom(), stroke_width=3, tip_length=0.15, color=c,
-                        max_stroke_width_to_length_ratio=1000, max_tip_length_to_length_ratio=1000).set_opacity(0.25)
+                        max_stroke_width_to_length_ratio=1000, max_tip_length_to_length_ratio=1000).set_opacity(0.7)
                     normed.play(MoveToTarget(seed_copy), GrowArrow(arrow))
 
                     # add crumbs before this match while moving a slider backwards through the query
@@ -226,22 +229,29 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
                 partitions.append({ ref.text[i:i+l] for i in range(len(ref)-depth-1) })
             vertices = [ node for layer in partitions for node in layer ] # ['', 'A', 'C', 'G', 'T']  
             edges = []
-            g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_config={'align': 'horizontal'}, labels=False)
-            g.scale(1.0).next_to(ref, UP)
+            layout_config = {'align': 'horizontal'}
+            g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_config=layout_config, labels=False)
+            g.stretch_to_fit_height(2.0).next_to(ref, UP)
+            g.set_node
             g.label = self.mylabel('Trie').next_to(g, LEFT).align_to(ref.label, LEFT)
-            normed.play(FadeIn(g.label), Create(g))
+            normed.play(FadeIn(g.label)) #, Create(g))
 
+            MAX_PATHS = 6
             # iterate all kmers in ref
-            for i in range(len(ref)-depth):
+            for i in range(min(len(ref)-depth, MAX_PATHS)):
                 kmer = ref[i:i+depth]
                 kmer.text = ref.text[i:i+depth]
-                new_edges = [] #[('', 'G'), ('G', 'GG')]
+                anims = []
                 for l in range(len(kmer.text)-1):
+                    letter = ref[i+l].copy().set_color(WHITE)
                     edge = (kmer.text[:l], kmer.text[:l+1])
-                    print(edge)
-                    new_edges.append(edge)
+                    edge_obj = g.add_edges(*[edge]).set_opacity(0.7)
+                    #new_edges.append(edge)
+                    anims.append(Create(edge_obj))
+                    anims.append(letter.animate.move_to(edge_obj, LEFT))
+                normed.play(LaggedStart(*anims, lag_ratio=0.2))
 
-                group = g.add_edges(*new_edges)
+                #group = g.add_edges(*new_edges)
                 #TexMobject(label).move_to(point)
                 #normed.play(Create(group))
                 #normed.play(ref[i].animate.become(trie_edge_label))
@@ -261,9 +271,9 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         number_of_queries   = 3  #10  # number of reads 
         kmer_size           = 2  # kmer size
         trie_depth          = 3  # trie depth
-        query               = Text("AACCGGTT")
-        ref                 = Text("GGAAGTCAACCGATT")
+        query               = self.mytext("AACCGGTT")
+        ref                 = self.mytext("GGAAGTCAACCGATT")
 
         ref, query = self.ref_query(ref, query, number_of_queries)
-        #self.seeds_matches_crumbs(ref, query, kmer_size)
+        self.seeds_matches_crumbs(ref, query, kmer_size)
         self.trie(ref, trie_depth)
