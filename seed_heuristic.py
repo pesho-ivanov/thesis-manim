@@ -225,9 +225,10 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
         # builds trie
         with self.voiceover_norm(text="In order to give the possibility to start our search from one place, we will aggregate the the whole reference into a trie index.") as normed:
             partitions = []
-            for l in reversed(range(depth)):
-                partitions.append({ ref.text[i:i+l] for i in range(len(ref)-depth-1) })
+            for l in reversed(range(depth+1)):
+                partitions.append({ ref.text[i:i+l] for i in range(len(ref)-depth) })
             vertices = [ node for layer in partitions for node in layer ] # ['', 'A', 'C', 'G', 'T']  
+            print(vertices)
             edges = []
             layout_config = {'align': 'horizontal'}
             g = Graph(vertices, edges, layout="partite", partitions=partitions, layout_config=layout_config, labels=False)
@@ -238,11 +239,20 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
 
             MAX_PATHS = 6
             # iterate all kmers in ref
+            seed_box = None
             for i in range(min(len(ref)-depth, MAX_PATHS)):
                 kmer = ref[i:i+depth]
                 kmer.text = ref.text[i:i+depth]
+
+                next_seed_box = SurroundingRectangle(kmer, buff=0.04, color=YELLOW)
+                if not seed_box:
+                    normed.play(Create(next_seed_box))
+                    seed_box = next_seed_box
+                else:
+                    normed.play(seed_box.animate.move_to(next_seed_box))
+
                 anims = []
-                for l in range(len(kmer.text)-1):
+                for l in range(len(kmer.text)):
                     letter = ref[i+l].copy().set_color(WHITE)
                     edge = (kmer.text[:l], kmer.text[:l+1])
                     edge_obj = g.add_edges(*[edge]).set_opacity(0.7)
@@ -270,7 +280,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
 
         number_of_queries   = 3  #10  # number of reads 
         kmer_size           = 2  # kmer size
-        trie_depth          = 3  # trie depth
+        trie_depth          = 2  # trie depth
         query               = self.mytext("AACCGGTT")
         ref                 = self.mytext("GGAAGTCAACCGATT")
 
