@@ -6,7 +6,7 @@
         {
             "label": "render",
             "type": "shell",
-            "command": "manim -pql ${file} SeedHeuristicPrecomputation --disable_caching",
+            "command": "manim -pqh ${file} SeedHeuristicPrecomputation --disable_caching",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

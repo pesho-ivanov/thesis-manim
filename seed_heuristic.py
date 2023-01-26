@@ -237,7 +237,7 @@ class SeedHeuristicPrecomputation(VoiceoverScene, MovingCameraScene, NormPlay):
             g.label = self.mylabel('Trie').next_to(g, LEFT).align_to(ref.label, LEFT)
             normed.play(FadeIn(g.label)) #, Create(g))
 
-            MAX_PATHS = 6
+            MAX_PATHS = 10
             # iterate all kmers in ref
             seed_box = None
             for i in range(min(len(ref)-depth, MAX_PATHS)):
