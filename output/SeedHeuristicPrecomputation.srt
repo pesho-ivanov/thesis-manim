@@ -1,0 +1,64 @@
+1
+00:00:00,000 --> 00:00:04,052
+DNA sequencing machines produce large amount of "reads".
+
+2
+00:00:05,166 --> 00:00:08,666
+Each of them originates from a certain genome location.
+
+3
+00:00:09,766 --> 00:00:12,053
+If we analyse a known organism, we can
+
+4
+00:00:12,153 --> 00:00:14,754
+compare the new data to a reference genome.
+
+5
+00:00:15,866 --> 00:00:17,840
+We will now show how to find where
+
+6
+00:00:17,940 --> 00:00:20,158
+each query read aligns in a reference.
+
+7
+00:00:21,266 --> 00:00:23,193
+We will use the A* shortest path
+
+8
+00:00:23,293 --> 00:00:26,614
+algorithm to find optimal alignments very efficiently.
+
+9
+00:00:28,166 --> 00:00:30,347
+To direct the A-star search, we will
+
+10
+00:00:30,447 --> 00:00:32,818
+first divide the read into short seeds.
+
+11
+00:00:34,966 --> 00:00:37,880
+We will now match each seed to all its exact occurences and
+
+12
+00:00:37,980 --> 00:00:41,762
+mark the preceding reference positions with what we call bread crumbs. These
+
+13
+00:00:41,862 --> 00:00:44,980
+crumbs will prove handy when we will want to know how promising
+
+14
+00:00:45,080 --> 00:00:47,994
+a certain direction is for bringing us to a best alignment.
+
+15
+00:00:52,700 --> 00:00:55,928
+In order to give the possibility to start our search from one
+
+16
+00:00:56,028 --> 00:00:59,584
+place, we will aggregate the the whole reference into a trie index.
+
